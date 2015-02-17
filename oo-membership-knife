@@ -1,0 +1,166 @@
+#!/usr/bin/env oo-ruby
+
+# vi:syntax=ruby
+
+require 'rubygems'
+require 'getoptlong'
+require 'date'
+
+MEMBERSHIP_KNIFE_COMMANDS = %w[add-all remove-all add remove]
+DEFAULT_PLATFORM = "Linux"
+
+def usage
+    puts <<USAGE
+== Synopsis
+
+oo-membership-knife: Insert and remove user and
+team memberships without domain owner's consent.
+
+== Usage
+
+Options:
+    -c|--command <command>
+        (#{MEMBERSHIP_KNIFE_COMMANDS * '|'})
+    -l|--login <login>
+        Login of target user. (Replaces --team argument)
+    -t|--team <team>
+        Name of target team
+    -d|--domain <domain namespace>
+        Namespace of target domain
+
+Examples:
+    Add backup user to all groups with:
+        #{File.basename $0} -c add-all -n backup
+
+    Remove team maintainers from domain
+    testdomain with:
+        #{File.basename $0} -c remove -n maintaintenance -d testdomain
+USAGE
+    exit 255
+end
+
+def find_domain(domain)
+    if domain.nil?
+        puts "Domain namespace must be provided to operate on single domain."
+        usage
+    end
+    begin
+        d = Domain.find_by namespace: domain
+    rescue Mongoid::Errors::DocumentNotFound
+    end
+    unless d
+        puts "Domain #{domain} not found."
+        exit 1
+    end
+    d
+end
+
+opts = GetoptLong.new(
+    ["--command",           "-c", GetoptLong::REQUIRED_ARGUMENT],
+    ["--login",             "-l", GetoptLong::REQUIRED_ARGUMENT],
+    ["--team",              "-t", GetoptLong::REQUIRED_ARGUMENT],
+    ["--domain",            "-d", GetoptLong::REQUIRED_ARGUMENT],
+    ["--help",              "-h", GetoptLong::REQUIRED_ARGUMENT]
+)
+
+args = {}
+begin
+    opts.each{ |k,v| args[k] = v }
+rescue GetoptLong::Error => e
+    usage
+end
+
+command     = args["--command"]
+login       = args["--login"]
+team        = args["--team"]
+domain      = args["--domain"]
+
+if command.nil? or (login.nil? and team.nil?)
+    usage
+end
+
+require "#{ENV['OPENSHIFT_BROKER_DIR'] || '/var/www/openshift/broker'}/config/environment"
+#include AdminHelper
+
+# Disable analytics for admin scripts
+Rails.configuration.analytics[:enabled] = false
+
+if login.nil?
+    begin
+        team = Team.with(consistency: :eventual).find_by(name: team)
+    rescue Mongoid::Errors::DocumentNotFound
+    end
+    if team.is_a? String
+        puts "Team #{team} not found."
+        exit 1
+    end
+    member = team
+else
+    begin
+        #login = CloudUser.normalize_login(login)
+        user = CloudUser.with(consistency: :eventual).find_by(login: login)
+    rescue Mongoid::Errors::DocumentNotFound
+    end
+    unless user
+        puts "User #{login} not found."
+        exit 1
+    end
+    member = user
+end
+
+reply = ResultIO.new
+domain_count = 0
+begin
+    case command
+    when "add-all"
+        Domain.all.each do |d|
+            unless d.has_member?(member)
+                d.add_members member, :view
+                d.save!
+                d.run_jobs
+                domain_count += 1
+            end
+        end
+    when "add"
+        d = find_domain(domain)
+        unless d.has_member?(member)
+            d.add_members member, :view
+            d.save!
+            d.run_jobs
+            domain_count += 1
+        end
+    when "remove-all"
+        Domain.all.each do |d|
+            if d.has_member?(member)
+                d.remove_members member
+                d.save!
+                d.run_jobs
+                domain_count += 1
+            end
+        end
+    when "remove"
+        d = find_domain(domain)
+        if d.has_member?(member)
+            d.remove_members member
+            d.save!
+            d.run_jobs
+            domain_count += 1
+        end
+    else
+        puts "Command must be one of: #{MEMBERSHIP_KNIFE_COMMANDS}"
+        usage
+    end
+rescue OpenShift::UserException => e
+    puts e.message
+    exit 1
+end
+
+if command.eql? "add-all" or command.eql? "add"
+    puts "Added user or team to #{domain_count} domains."
+elsif command.eql? "remove-all" or command.eql? "remove"
+    puts "Removed user or team from #{domain_count} domains"
+end
+
+#puts "DEBUG OUTPUT:\n#{reply.debugIO.string}\n" unless reply.debugIO.string.empty?
+#puts "ERROR OUTPUT:\n#{reply.errorIO.string}\n" unless reply.errorIO.string.empty?
+puts reply.resultIO.string.empty? ? "Success" : reply.resultIO.string
