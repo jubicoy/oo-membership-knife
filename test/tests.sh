@@ -72,7 +72,7 @@ testAddUserToSingle() {
     assertDoesNotContain "$(rhc -k member list -n test1d2 -a a3 -l test1 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c add -l backup -d test1d1
+    $DIR/../oo-membership-knife -c add -l backup -d test1d1
 
     assertContains "$(rhc -k member list -n test1d1 -l test1 -p test)" \
         "backup[ \t]*view"
@@ -104,7 +104,7 @@ testAddTeamToSingle() {
     assertDoesNotContain "$(rhc -k member list -n test1d2 -a a3 -l test1 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c add -t testteam -d test1d1
+    $DIR/../oo-membership-knife -c add -t testteam -d test1d1
 
     assertContains "$(rhc -k member list -n test1d1 -l test1 -p test)" \
         "testteam[ \t]*view"
@@ -144,7 +144,7 @@ testAddUserToAll() {
     assertDoesNotContain "$(rhc -k member list -n test2d2 -a a2 -l test2 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c add-all -l backup
+    $DIR/../oo-membership-knife -c add-all -l backup
 
     assertContains "$(rhc -k member list -n test1d1 -l test1 -p test)" \
         "backup[ \t]*view"
@@ -196,7 +196,7 @@ testAddTeamToAll() {
     assertDoesNotContain "$(rhc -k member list -n test2d2 -a a2 -l test2 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c add-all -t testteam
+    $DIR/../oo-membership-knife -c add-all -t testteam
 
     assertContains "$(rhc -k member list -n test1d1 -l test1 -p test)" \
         "testteam[ \t]*view"
@@ -241,7 +241,7 @@ testRemoveUserFromSingle() {
     assertDoesNotContain "$(rhc -k member list -n test1d2 -a a3 -l test1 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c remove -l backup -d test1d1
+    $DIR/../oo-membership-knife -c remove -l backup -d test1d1
 
     assertDoesNotContain "$(rhc -k member list -n test1d1 -l test1 -p test)" \
         "backup[ \t]*view"
@@ -269,7 +269,7 @@ testRemoveTeamFromSingle() {
     assertContains "$(rhc -k member list -n test2d2 -a a2 -l test2 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c remove -t testteam -d test2d1
+    $DIR/../oo-membership-knife -c remove -t testteam -d test2d1
 
     assertDoesNotContain "$(rhc -k member list -n test2d1 -l test1 -p test)" \
         "testteam[ \t]*view"
@@ -307,7 +307,7 @@ testRemoveUserFromAll() {
     assertContains "$(rhc -k member list -n test2d2 -a a2 -l test2 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c remove-all -l backup
+    $DIR/../oo-membership-knife -c remove-all -l backup
 
     assertDoesNotContain "$(rhc -k member list -n test1d1 -l test1 -p test)" \
         "backup[ \t]*view"
@@ -343,7 +343,7 @@ testRemoveTeamFromAll() {
     assertContains "$(rhc -k member list -n test2d2 -a a2 -l test2 -p test)" \
         "backup[ \t]*view"
 
-    $DIR/oo-membership-knife -c remove-all -t testteam
+    $DIR/../oo-membership-knife -c remove-all -t testteam
 
     assertDoesNotContain "$(rhc -k member list -n test2d1 -l test2 -p test)" \
         "testteam[ \t]*view"

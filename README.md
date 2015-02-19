@@ -5,6 +5,10 @@ places where they don't belong to. Intended use case is allowing backups
 with `rhc snapshot` utility by injecting a backup user with view
 privileges.
 
+## Install
+
+Copy the `oo-membership-knife` file to `/usr/sbin/`on Broker and set permissions to 750.
+
 ## Usage
 
 The utility allows add and remove operations that operate either on a
@@ -20,5 +24,5 @@ oo-membership-knife -c add -l <user login> -d <domain namespace>
 A set of tests that depends heavily on `rhc` is included. The tests are
 run against the latest Openshift Origin v4 from
 https://install.openshift.com/. To run the tests replace the Vagrant box
-in the Vagrantfile with a CentOS 6 box from Atlas and prepare for the 2h
-runtime.
+in the Vagrantfile with a CentOS 6 box from Atlas and prepare for 75
+minute runtime.
