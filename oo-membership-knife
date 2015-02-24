@@ -115,7 +115,7 @@ begin
     when "add-all"
         Domain.all.each do |d|
             unless d.has_member?(member)
-                d.add_members member, :view
+                d.add_members member, :edit
                 d.save!
                 d.run_jobs
                 domain_count += 1
@@ -124,7 +124,7 @@ begin
     when "add"
         d = find_domain(domain)
         unless d.has_member?(member)
-            d.add_members member, :view
+            d.add_members member, :edit
             d.save!
             d.run_jobs
             domain_count += 1
